@@ -8,6 +8,8 @@ theory IsolatedThreadAction
 imports "CLib.MonadicRewrite_C" Finalise_C CSpace_All SyscallArgs_C
 begin
 
+context begin interpretation Arch .
+
 datatype tcb_state_regs = TCBStateRegs "thread_state" "MachineTypes.register \<Rightarrow> machine_word"
 
 definition
@@ -32,13 +34,16 @@ definition
   get_tcb_state_regs :: "kernel_object option \<Rightarrow> tcb_state_regs"
 where
  "get_tcb_state_regs oko \<equiv> case oko of
-    Some (KOTCB tcb) \<Rightarrow> TCBStateRegs (tcbState tcb) ((atcbContextGet o tcbArch) tcb)"
+    Some (KOTCB tcb) \<Rightarrow> TCBStateRegs (tcbState tcb) ((user_regs o atcbContextGet o tcbArch) tcb)"
 
 definition
   put_tcb_state_regs_tcb :: "tcb_state_regs \<Rightarrow> tcb \<Rightarrow> tcb"
 where
  "put_tcb_state_regs_tcb tsr tcb \<equiv> case tsr of
-     TCBStateRegs st regs \<Rightarrow> tcb \<lparr> tcbState := st, tcbArch := atcbContextSet regs (tcbArch tcb) \<rparr>"
+     TCBStateRegs st regs \<Rightarrow>
+        tcb \<lparr> tcbState := st,
+              tcbArch := atcbContextSet (UserContext (fpu_state (atcbContext (tcbArch tcb))) regs)
+                         (tcbArch tcb) \<rparr>"
 
 definition
   put_tcb_state_regs :: "tcb_state_regs \<Rightarrow> kernel_object option \<Rightarrow> kernel_object option"
@@ -70,15 +75,20 @@ definition
     return rv
   od"
 
+lemma UserContextGet[simp]:
+  "UserContext (fpu_state (atcbContext t)) (user_regs (atcbContextGet t)) = atcbContextGet t"
+  by (cases t, simp add: atcbContextGet_def)
+
 lemma put_tcb_state_regs_twice[simp]:
   "put_tcb_state_regs tsr (put_tcb_state_regs tsr' tcb)
     = put_tcb_state_regs tsr tcb"
   apply (simp add: put_tcb_state_regs_def put_tcb_state_regs_tcb_def
-                   makeObject_tcb
+                   atcbContextSet_def
+                   makeObject_tcb newArchTCB_def newContext_def initContext_def
             split: tcb_state_regs.split option.split
                    Structures_H.kernel_object.split)
   apply (intro all_tcbI impI allI)
-  apply simp
+  apply (case_tac q, simp)
   done
 
 lemma partial_overwrite_twice[simp]:
@@ -118,6 +128,8 @@ lemma isolate_thread_actions_bind:
 lemmas setEndpoint_obj_at_tcb' = setEndpoint_obj_at'_tcb
 
 lemmas setNotification_tcb = set_ntfn_tcb_obj_at'
+
+end
 
 context kernel_m begin
 lemma setObject_modify:
@@ -173,13 +185,13 @@ lemma partial_overwrite_fun_upd:
 
 lemma get_tcb_state_regs_ko_at':
   "ko_at' ko p s \<Longrightarrow> get_tcb_state_regs (ksPSpace s p)
-       = TCBStateRegs (tcbState ko) ((atcbContextGet o tcbArch) ko)"
+       = TCBStateRegs (tcbState ko) ((user_regs o atcbContextGet o tcbArch) ko)"
   by (clarsimp simp: obj_at'_def projectKOs get_tcb_state_regs_def)
 
 lemma put_tcb_state_regs_ko_at':
   "ko_at' ko p s \<Longrightarrow> put_tcb_state_regs tsr (ksPSpace s p)
        = Some (KOTCB (ko \<lparr> tcbState := tsrState tsr
-                         , tcbArch := atcbContextSet (tsrContext tsr) (tcbArch ko)\<rparr>))"
+                         , tcbArch := atcbContextSet (UserContext (fpu_state (atcbContext (tcbArch ko))) (tsrContext tsr)) (tcbArch ko)\<rparr>))"
   by (clarsimp simp: obj_at'_def projectKOs put_tcb_state_regs_def
                      put_tcb_state_regs_tcb_def
               split: tcb_state_regs.split)
@@ -210,7 +222,7 @@ lemma ksPSpace_update_partial_id:
   done
 
 lemma isolate_thread_actions_asUser:
-  "\<lbrakk> idx t' = t; inj idx; f = (\<lambda>s. ({(v, g s)}, False)) \<rbrakk> \<Longrightarrow>
+  "\<lbrakk> idx t' = t; inj idx; f = (\<lambda>s. ({(v, UserContext (fpu_state s) (g (user_regs s)))}, False)) \<rbrakk> \<Longrightarrow>
    monadic_rewrite False True (\<lambda>s. \<forall>x. tcb_at' (idx x) s)
       (asUser t f)
       (isolate_thread_actions idx (return v)
@@ -231,15 +243,31 @@ lemma isolate_thread_actions_asUser:
   apply (clarsimp simp: partial_overwrite_get_tcb_state_regs
                         put_tcb_state_regs_ko_at')
   apply (case_tac ko, simp)
+  apply (rename_tac uc)
+  apply (case_tac uc, simp add: modify_registers_def atcbContextGet_def atcbContextSet_def)
+  done
+
+lemma getRegister_simple:
+  "getRegister r = (\<lambda>con. ({(user_regs con r, con)}, False))"
+  by (simp add: getRegister_def simpler_gets_def)
+
+lemma mapM_getRegister_simple:
+  "mapM getRegister rs = (\<lambda>con. ({(map (user_regs con) rs, con)}, False))"
+  apply (induct rs)
+   apply (simp add: mapM_Nil return_def)
+  apply (simp add: mapM_Cons getRegister_def simpler_gets_def
+                   bind_def return_def)
   done
 
 lemma setRegister_simple:
-  "setRegister r v = (\<lambda>con. ({((), con (r := v))}, False))"
+  "setRegister r v = (\<lambda>con. ({((), UserContext (fpu_state con) ((user_regs con)(r := v)))}, False))"
   by (simp add: setRegister_def simpler_modify_def)
 
 lemma zipWithM_setRegister_simple:
   "zipWithM_x setRegister rs vs
-      = (\<lambda>con. ({((), foldl (\<lambda>con (r, v). con (r := v)) con (zip rs vs))}, False))"
+      = (\<lambda>con. ({((),
+                  UserContext (fpu_state con)
+                              (foldl (\<lambda>regs (r, v). ((regs)(r := v))) (user_regs con) (zip rs vs)))}, False))"
   apply (simp add: zipWithM_x_mapM_x)
   apply (induct ("zip rs vs"))
    apply (simp add: mapM_x_Nil return_def)
@@ -286,7 +314,7 @@ lemma map_to_ctes_partial_overwrite:
               cong: if_cong option.case_cong)
    apply (case_tac obj, simp split: tcb_state_regs.split if_split)
    apply (intro impI allI)
-   apply (subgoal_tac "x - idx xa = x && mask 9")
+   apply (subgoal_tac "x - idx xa = x && mask 10")
     apply (clarsimp simp: tcb_cte_cases_def split: if_split)
    apply (drule_tac t = "idx xa" in sym)
     apply simp
@@ -707,7 +735,7 @@ lemma lookupIPC_inv: "\<lbrace>P\<rbrace> lookupIPCBuffer f t \<lbrace>\<lambda>
 lemmas empty_fail_user_getreg = empty_fail_asUser[OF empty_fail_getRegister]
 
 lemma user_getreg_rv:
-  "\<lbrace>obj_at' (\<lambda>tcb. P ((atcbContextGet o tcbArch) tcb r)) t\<rbrace> asUser t (getRegister r) \<lbrace>\<lambda>rv s. P rv\<rbrace>"
+  "\<lbrace>obj_at' (\<lambda>tcb. P ((user_regs o atcbContextGet o tcbArch) tcb r)) t\<rbrace> asUser t (getRegister r) \<lbrace>\<lambda>rv s. P rv\<rbrace>"
   apply (simp add: asUser_def split_def)
   apply (wp threadGet_wp)
   apply (clarsimp simp: obj_at'_def projectKOs getRegister_def in_monad atcbContextGet_def)
@@ -734,7 +762,7 @@ lemma doIPCTransfer_simple_rewrite:
                \<and> msgLength (messageInfoFromWord msgInfo)
                       \<le> of_nat (length ARM_H.msgRegisters))
       and obj_at' (\<lambda>tcb. tcbFault tcb = None
-               \<and> (atcbContextGet o tcbArch) tcb msgInfoRegister = msgInfo) sender)
+               \<and> (user_regs o atcbContextGet o tcbArch) tcb msgInfoRegister = msgInfo) sender)
    (doIPCTransfer sender ep badge grant rcvr)
    (do rv \<leftarrow> mapM_x (\<lambda>r. do v \<leftarrow> asUser sender (getRegister r);
                              asUser rcvr (setRegister r v)
@@ -1085,6 +1113,12 @@ lemma partial_overwrite_fun_upd2:
                 else y)"
   by (simp add: fun_eq_iff partial_overwrite_def split: if_split)
 
+lemma atcbContextSetSetGet_eq[simp]:
+  "atcbContextSet (UserContext (fpu_state (atcbContext
+     (atcbContextSet (UserContext (fpu_state (atcbContext t)) r) t)))
+        (user_regs (atcbContextGet t))) t = t"
+  by (cases t, simp add: atcbContextSet_def atcbContextGet_def)
+
 lemma setCTE_isolatable:
   "thread_actions_isolatable idx (setCTE p v)"
   apply (simp add: setCTE_assert_modify)
@@ -1355,6 +1389,7 @@ lemma copy_register_isolate:
   apply (case_tac obj, case_tac obja)
   apply (simp add: projectKO_opt_tcb put_tcb_state_regs_def
                    put_tcb_state_regs_tcb_def get_tcb_state_regs_def
+                   atcbContextGet_def
              cong: if_cong)
   apply (auto simp: fun_eq_iff split: if_split)
   done
@@ -1473,7 +1508,8 @@ lemmas fastpath_isolatables
       thread_actions_isolatable_returns
 
 lemmas fastpath_isolate_rewrites
-    = isolate_thread_actions_threadSet_tcbState isolate_thread_actions_asUser
+    = isolate_thread_actions_threadSet_tcbState
+      isolate_thread_actions_asUser
       copy_registers_isolate setSchedulerAction_isolate
       fastpath_isolatables[THEN thread_actions_isolatableD]
 
