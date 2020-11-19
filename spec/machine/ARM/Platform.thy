@@ -30,12 +30,12 @@ abbreviation (input) "toPAddr \<equiv> id"
 abbreviation (input) "fromPAddr \<equiv> id"
 
 definition
-  pageColourBits :: nat where
-  "pageColourBits \<equiv> 2"
+  cacheLineBits :: nat where
+  "cacheLineBits = 6"
 
 definition
-  cacheLineBits :: nat where
-  "cacheLineBits = 5"
+  pageColourBits :: nat where
+  "pageColourBits = undefined" \<comment> \<open> unused \<close>
 
 definition
   cacheLine :: nat where
@@ -48,7 +48,7 @@ definition
 
 definition
   physBase :: word32 where
-  "physBase \<equiv> 0x10000000"
+  "physBase \<equiv> 0x40000000"
 
 definition
   pptrBaseOffset :: word32 where
@@ -68,7 +68,7 @@ definition
 
 definition
   maxIRQ :: "irq" where
-  "maxIRQ \<equiv> 0x9F"
+  "maxIRQ \<equiv> 160"
 
 end
 

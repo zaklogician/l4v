@@ -23,7 +23,7 @@ text \<open>
 
 section "Types"
 
-#INCLUDE_HASKELL SEL4/Machine/RegisterSet/ARM.lhs CONTEXT ARM decls_only NOT UserContext UserMonad Word getRegister setRegister newContext
+#INCLUDE_HASKELL SEL4/Machine/RegisterSet/ARM.lhs CONTEXT ARM decls_only NOT UserContext UserMonad Word getRegister setRegister newContext FPUState newFPUState
 (*<*)
 
 end
@@ -36,7 +36,7 @@ context Arch begin global_naming ARM
 
 #INCLUDE_HASKELL SEL4/Machine/RegisterSet/ARM.lhs CONTEXT ARM instanceproofs
 (*>*)
-#INCLUDE_HASKELL SEL4/Machine/RegisterSet/ARM.lhs CONTEXT ARM bodies_only NOT getRegister setRegister newContext
+#INCLUDE_HASKELL SEL4/Machine/RegisterSet/ARM.lhs CONTEXT ARM bodies_only NOT getRegister setRegister newContext newFPUState
 
 section "Machine State"
 
