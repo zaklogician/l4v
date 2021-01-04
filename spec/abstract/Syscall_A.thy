@@ -430,26 +430,21 @@ definition
        handle_event ev <handle>
            (\<lambda>_. without_preemption $ do
                   irq \<leftarrow> do_machine_op $ getActiveIRQ True;
-                  when (irq \<noteq> None) $ do
-                    update_time_stamp;
-                    ct \<leftarrow> gets cur_thread;
-                    schedulable <- is_schedulable ct;
-                    if schedulable then do
-                      check_budget;
-                      return ()
-                    od
-                    else do
-                      csc \<leftarrow> gets cur_sc;
-                      sc \<leftarrow> get_sched_context csc;
-                      when (0 < sc_refill_max sc) $ do
-                        consumed \<leftarrow> gets consumed_time;
-                        capacity \<leftarrow> get_sc_refill_capacity csc consumed;
-                        charge_budget consumed False;
-                        return ()
-                      od
-                    od;
-                    handle_interrupt (the irq)
-                  od
+                  update_time_stamp;
+                  ct \<leftarrow> gets cur_thread;
+                  schedulable \<leftarrow> is_schedulable ct;
+                  if schedulable
+                  then do check_budget;
+                          return ()
+                       od
+                  else do csc \<leftarrow> gets cur_sc;
+                          active \<leftarrow> get_sc_active csc;
+                          when active $ do consumed \<leftarrow> gets consumed_time;
+                                           charge_budget consumed False;
+                                           return ()
+                                        od
+                       od;
+                  when (irq \<noteq> None) $ handle_interrupt (the irq)
                 od);
        schedule;
        activate_thread

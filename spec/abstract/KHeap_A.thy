@@ -605,7 +605,7 @@ text \<open>Allow preemption at this point.\<close>
 definition
   is_cur_domain_expired :: "'z::state_ext state \<Rightarrow> bool"
 where
-  "is_cur_domain_expired = (\<lambda>s. domain_time  s < consumed_time s + MIN_BUDGET)"
+  "is_cur_domain_expired = (\<lambda>s. domain_time s < consumed_time s + MIN_BUDGET)"
 
 definition
   preemption_point :: "(unit,'z::state_ext) p_monad" where
@@ -613,17 +613,17 @@ definition
                          OR_choiceE (work_units_limit_reached)
                            (doE liftE $ do_extended_op reset_work_units;
                                 irq_opt \<leftarrow> liftE $ do_machine_op (getActiveIRQ True);
-                                case_option (do
-                                               cur_sc \<leftarrow> gets cur_sc;
-                                               sc \<leftarrow> get_sched_context cur_sc;
-                                               consumed \<leftarrow> gets consumed_time;
-                                               sufficient \<leftarrow> get_sc_refill_sufficient cur_sc consumed;
-                                               exp \<leftarrow> gets is_cur_domain_expired;
-                                               if (\<not>(sc_active sc \<and> sufficient) \<or> exp)
-                                               then (throwError $ ())
-                                               else returnOk ()
-                                             od) (K (throwError $ ())) irq_opt
-                           odE) (returnOk ())
+                                case_option (do cur_sc \<leftarrow> gets cur_sc;
+                                                sc \<leftarrow> get_sched_context cur_sc;
+                                                consumed \<leftarrow> gets consumed_time;
+                                                sufficient \<leftarrow> get_sc_refill_sufficient cur_sc consumed;
+                                                exp \<leftarrow> gets is_cur_domain_expired;
+                                                if \<not>(sc_active sc \<and> sufficient) \<or> exp
+                                                then (throwError $ ())
+                                                else returnOk ()
+                                             od)
+                                            (K (throwError $ ())) irq_opt
+                            odE) (returnOk ())
                      odE"
 
 end
