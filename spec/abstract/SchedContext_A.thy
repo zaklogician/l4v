@@ -13,11 +13,6 @@ begin
 text \<open> This theory contains operations on scheduling contexts and scheduling control. \<close>
 
 definition
-  is_cur_domain_expired :: "'z::state_ext state \<Rightarrow> bool"
-where
-  "is_cur_domain_expired = (\<lambda>s. domain_time  s < consumed_time s + MIN_BUDGET)"
-
-definition
   is_round_robin :: "obj_ref \<Rightarrow> (bool,'z::state_ext) s_monad"
 where
   "is_round_robin sc_ptr = do
