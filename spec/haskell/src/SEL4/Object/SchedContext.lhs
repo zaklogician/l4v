@@ -41,7 +41,6 @@ This module uses the C preprocessor to select a target architecture.
 > import SEL4.API.Types(MessageInfo(..))
 > import {-# SOURCE #-} SEL4.Kernel.VSpace(lookupIPCBuffer)
 > import SEL4.Model.Failures
-> import SEL4.Model.Preemption(KernelP, withoutPreemption)
 > import SEL4.Model.PSpace(getObject, setObject)
 > import SEL4.Model.StateData
 > import {-# SOURCE #-} SEL4.Object.Notification

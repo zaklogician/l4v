@@ -14,6 +14,7 @@ This module defines the types and functions used by the kernel model to implemen
 
 > import SEL4.Machine
 > import SEL4.Model.StateData
+> import SEL4.Object.SchedContext(scActive, refillSufficient, isCurDomainExpired)
 
 > import Control.Monad.Except
 
@@ -50,5 +51,13 @@ In preemptible code, the kernel may explicitly mark a preemption point with the 
 >       lift $ setWorkUnits 0
 >       preempt <- lift $ doMachineOp (getActiveIRQ True)
 >       case preempt of
->           Just irq -> throwError ()
->           Nothing -> return ()
+>           Just irq -> throwError irq
+>           Nothing -> do
+>              csc <- getCurSc
+>              active <- scActive csc
+>              consumed <- getConsumedTime
+>              sufficient <- refillSufficient csc consumed
+>              domExp <- isCurDomainExpired
+>              if (not (active && sufficient) || domExp)
+>                   then throwError irq
+>                   else return ()
