@@ -22461,7 +22461,7 @@ lemma preemption_point_scheduler_act_sane:
    preemption_path
    \<lbrace>\<lambda>_. scheduler_act_sane :: det_state \<Rightarrow> _\<rbrace>"
   apply (clarsimp simp: preemption_path_def)
-  apply (wpsimp wp: is_schedulable_wp hoare_vcg_if_lift2 hoare_drop_imps charge_budget_invs)
+  apply (wpsimp wp: is_schedulable_wp hoare_vcg_if_lift2 hoare_drop_imps)
    apply (fastforce simp: ct_in_state_def is_BlockedOnReceive_def)
   apply (clarsimp simp: ct_in_state_def pred_tcb_at_def obj_at_def is_BlockedOnReceive_def)
   apply (rename_tac tcb, case_tac "tcb_state tcb"; clarsimp)
