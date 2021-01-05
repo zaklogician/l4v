@@ -125,11 +125,21 @@ context CSpace_AI_getActiveIRQ_wp begin
 
 lemma preemption_point_inv:
   fixes P :: "'state_ext state \<Rightarrow> bool"
-  shows
-    "\<lbrakk>irq_state_independent_A P; \<And>f s. P (trans_state f s) = P s\<rbrakk> \<Longrightarrow> \<lbrace>P\<rbrace> preemption_point \<lbrace>\<lambda>_. P\<rbrace>"
-  apply (intro impI conjI | simp add: preemption_point_def o_def
-       | wp hoare_post_imp[OF _ getActiveIRQ_wp] OR_choiceE_weak_wp alternative_wp[where P=P]
-       | wpc)+
+  shows "\<lbrakk>irq_state_independent_A P; \<And>f s. P (trans_state f s) = P s\<rbrakk>
+         \<Longrightarrow> \<lbrace>P\<rbrace> preemption_point \<lbrace>\<lambda>_. P\<rbrace>"
+  apply (clarsimp simp: preemption_point_def)
+  apply (rule validE_valid)
+  apply (rule hoare_seq_ext_skipE, wpsimp)
+  apply (rule valid_validE)
+  apply (rule OR_choiceE_weak_wp)
+  apply (rule alternative_valid; (solves wpsimp)?)
+  apply (rule validE_valid)
+  apply (rule hoare_seq_ext_skipE, solves wpsimp)+
+  apply (rename_tac irq_opt)
+  apply (case_tac irq_opt; clarsimp?, (solves wpsimp)?)
+  apply (rule valid_validE)
+  apply (rule hoare_seq_ext_skip, solves \<open>wpsimp simp: get_sc_refill_sufficient_def\<close>)+
+  apply wpsimp
   done
 
 end

@@ -826,7 +826,8 @@ lemma retype_region_obj_at_live:
 (* FIXME: move *)
 lemma preemption_point_obj_at:
   "preemption_point \<lbrace>\<lambda>s. N (obj_at P p s)\<rbrace>"
-  by (wpsimp simp: preemption_point_def wp: OR_choiceE_weak_wp dxo_wp_weak)
+  apply (wpsimp simp: preemption_point_def wp: OR_choiceE_weak_wp dxo_wp_weak hoare_drop_imps)
+  done
 
 (* FIXME: move *)
 lemma is_untyped_cap_UntypedCap:

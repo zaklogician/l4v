@@ -25,18 +25,6 @@ global_interpretation do_machine_op: non_heap_op "do_machine_op m"
 abbreviation max_time :: time where
   "max_time \<equiv> max_word"
 
-(* FIXME RT: move to Lib *)
-\<comment> \<open>For forward reasoning in Hoare proofs, these lemmas allow skipping over the
-    left-hand-side of monadic bind, while keeping the same precondition.\<close>
-lemmas hoare_seq_ext_skip
-  = hoare_seq_ext[where B="\<lambda>_. A" and A=A for A, rotated]
-
-lemmas hoare_seq_ext_skipE
-  = hoare_vcg_seqE[where B="\<lambda>_. A" and A=A for A, rotated]
-
-lemmas hoare_seq_ext_skip'
-  = hoare_seq_ext[where B=C and C=C for C]
-
 \<comment> \<open>Various lifting rules\<close>
 
 lemma hoare_liftP_ext_pre_conj:
