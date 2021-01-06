@@ -22443,8 +22443,7 @@ lemma preemption_path_current_time_bounded:
   "\<lbrace>next_time_bounded k and valid_machine_time\<rbrace>
    preemption_path
    \<lbrace>\<lambda>_. current_time_bounded k :: det_state \<Rightarrow> _\<rbrace>"
-  apply (clarsimp simp: preemption_path_def)
-  apply (wpsimp wp: is_schedulable_wp hoare_drop_imps hoare_vcg_if_lift2)
+  apply (wpsimp simp: preemption_path_def wp: is_schedulable_wp hoare_drop_imps hoare_vcg_if_lift2)
   apply (erule (1) next_time_bounded_current_time_bounded)
   done
 
@@ -22452,8 +22451,7 @@ lemma preemption_path_consumed_time_bounded:
   "\<lbrace>consumed_time_bounded and valid_machine_time\<rbrace>
    preemption_path
    \<lbrace>\<lambda>_. consumed_time_bounded :: det_state \<Rightarrow> _\<rbrace>"
-  apply (clarsimp simp: preemption_path_def)
-  apply (wpsimp wp: is_schedulable_wp hoare_drop_imps hoare_vcg_if_lift2)
+  apply (wpsimp simp: preemption_path_def wp: is_schedulable_wp hoare_drop_imps hoare_vcg_if_lift2)
   done
 
 lemma preemption_point_scheduler_act_sane:
