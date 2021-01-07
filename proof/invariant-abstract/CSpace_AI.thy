@@ -138,7 +138,8 @@ lemma preemption_point_inv:
   apply (rename_tac irq_opt)
   apply (case_tac irq_opt; clarsimp?, (solves wpsimp)?)
   apply (rule valid_validE)
-  apply (rule hoare_seq_ext_skip, solves \<open>wpsimp simp: get_sc_refill_sufficient_def\<close>)+
+  apply (rule hoare_seq_ext_skip
+         , solves \<open>wpsimp simp: get_sc_refill_sufficient_def get_sc_active_def\<close>)+
   apply wpsimp
   done
 
