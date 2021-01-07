@@ -589,8 +589,9 @@ lemma kernel_corres:
         apply simp
        apply (simp add: kernelExitAssertions_def state_relation_def)
       apply (simp only: bind_assoc)
+  sorry (*
       apply (rule kernel_corres')
-  sorry (* FIXME RT: call_kernel_domain_time_inv_det_ext
+ FIXME RT: call_kernel_domain_time_inv_det_ext
      apply (wp call_kernel_domain_time_inv_det_ext call_kernel_domain_list_inv_det_ext)
     apply wp
    apply clarsimp
