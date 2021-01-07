@@ -63,8 +63,8 @@ lemma preemption_point_success [simp,intro]:
   apply (auto simp: in_monad preemption_point_def do_machine_op_def
                     select_f_def select_def getActiveIRQ_def alternative_def
                     do_extended_op_def OR_choiceE_def mk_ef_def
-                    get_sc_refill_sufficient_def get_sched_context_def refill_sufficient_def
-                    get_object_def
+                    get_sc_refill_sufficient_def get_sc_active_def get_sched_context_def
+                    refill_sufficient_def get_object_def
              split: if_splits)
         apply (rule_tac x=Suc in exI, rule_tac x="exst bb" in exI, fastforce)+
      apply (rule_tac x=id in exI, rule_tac x="exst b" in exI, force)+

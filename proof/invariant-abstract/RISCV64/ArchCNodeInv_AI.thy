@@ -229,7 +229,7 @@ lemma in_preempt[simp, intro, CNodeInv_AI_assms]:
                         select_f_def select_def getActiveIRQ_def alternative_def
                         do_extended_op_def OR_choiceE_def mk_ef_def
                         get_sc_refill_sufficient_def get_sched_context_def return_def
-                        refill_sufficient_def get_object_def fail_def
+                        refill_sufficient_def get_object_def fail_def get_sc_active_def
                  split: if_splits)
   apply safe
         apply (case_tac y)
