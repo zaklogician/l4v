@@ -614,11 +614,11 @@ definition
                            (doE liftE $ do_extended_op reset_work_units;
                                 irq_opt \<leftarrow> liftE $ do_machine_op (getActiveIRQ True);
                                 case_option (do cur_sc \<leftarrow> gets cur_sc;
-                                                sc \<leftarrow> get_sched_context cur_sc;
+                                                active \<leftarrow> get_sc_active cur_sc;
                                                 consumed \<leftarrow> gets consumed_time;
                                                 sufficient \<leftarrow> get_sc_refill_sufficient cur_sc consumed;
                                                 exp \<leftarrow> gets is_cur_domain_expired;
-                                                if \<not>(sc_active sc \<and> sufficient) \<or> exp
+                                                if \<not>(active \<and> sufficient) \<or> exp
                                                 then (throwError $ ())
                                                 else returnOk ()
                                              od)
