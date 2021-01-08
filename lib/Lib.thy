@@ -52,7 +52,7 @@ to oppose me. Before the final blow was struck, I tore open a hole in a number o
 proofs, and flung him into a broken proof state, where my evil is law. *)
 
 definition
-  fun_app :: "('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b" (infixr "$" 10) where
+  fun_app :: "('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b" (infixr "$" 14) where
   "f $ x \<equiv> f x"
 
 declare fun_app_def [iff]
