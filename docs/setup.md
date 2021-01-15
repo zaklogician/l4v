@@ -99,7 +99,7 @@ mkdir -p ~/.isabelle/etc
 cp -i misc/etc/settings ~/.isabelle/etc/settings
 ./isabelle/bin/isabelle components -a
 ./isabelle/bin/isabelle jedit -bf
-./isabelle/bin/isabelle build -bv HOL-Word
+./isabelle/bin/isabelle build -bv HOL
 ```
 
 These commands perform the following steps:
@@ -116,7 +116,7 @@ These commands perform the following steps:
    elsewhere to make sure you have the right versions. Depending on your
    internet connection, this may take some time.
  * compile and build the Isabelle PIDE jEdit interface.
- * build basic Isabelle images, including `HOL-Word` to ensure that
+ * build basic Isabelle images to ensure that
    the installation works. This may take a few minutes.
 
 Alternatively, it is possible to use the official Isabelle2020 release
