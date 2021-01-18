@@ -1360,26 +1360,15 @@ lemma hyp_live_default_object:
   "ty \<noteq> Untyped \<Longrightarrow> \<not> hyp_live (default_object ty dev us dm)"
   by (cases ty; simp add: hyp_live_def)
 
-end
-
-lemmas clearMemory_invs[wp] = ARM.clearMemory_invs
-
-lemmas invs_irq_state_independent[intro!, simp]
-    = ARM.invs_irq_state_independent
-
-lemmas init_arch_objects_invs_from_restricted
-    = ARM.init_arch_objects_invs_from_restricted
-
-lemmas caps_region_kernel_window_imp
-    = ARM.caps_region_kernel_window_imp
-
 lemmas init_arch_objects_wps
-    = ARM.init_arch_objects_cte_wp_at
-      ARM.init_arch_objects_valid_cap
-      ARM.init_arch_objects_cap_table
-      ARM.init_arch_objects_excap
-      ARM.init_arch_objects_pred_tcb_at
-      ARM.init_arch_objects_cur_thread
-      ARM.init_arch_objects_ct_in_state
+    = init_arch_objects_cte_wp_at
+      init_arch_objects_valid_cap
+      init_arch_objects_cap_table
+      init_arch_objects_excap
+      init_arch_objects_pred_tcb_at
+      init_arch_objects_cur_thread
+      init_arch_objects_ct_in_state
+
+end
 
 end
