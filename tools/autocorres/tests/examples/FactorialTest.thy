@@ -52,6 +52,9 @@ proof (induct n arbitrary: m rule: less_induct)
     done
 qed
 
+(* FIXME: set default cases and induct rules for word *)
+declare word_induct2[induct type]
+
 lemma factorial'_terminates_old: "m > unat n \<longrightarrow> factorial' m n s \<noteq> None"
   apply (induct n arbitrary: m)
    apply (subst factorial'.simps, simp add: ocondition_def obind_def)
