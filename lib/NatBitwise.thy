@@ -37,8 +37,10 @@ instance ..
 
 end
 
-
-(* FIXME: set_bit now needs a ring
+(* FIXME isa: move to Word_Lib/Bits_Int *)
+lemma bin_sc_pos:
+  "0 \<le> i \<Longrightarrow> 0 \<le> bin_sc n b i"
+  by (metis bin_sign_sc sign_Pls_ge_0)
 
 instantiation nat :: set_bit
 begin
@@ -46,9 +48,12 @@ begin
 definition
   "set_bit x y z = nat (set_bit (int x) y z)"
 
-instance ..
+instance
+  by intro_classes
+     (simp add: set_bit_nat_def bit_nat_iff set_bit_int_def bin_nth_sc_gen bin_sc_pos
+                bit_of_nat_iff_bit)
 
-end *)
+end
 
 
 lemma nat_2p_eq_shiftl:
