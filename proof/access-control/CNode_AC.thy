@@ -221,7 +221,7 @@ lemma decode_cnode_inv_authorised:
   apply (rule hoare_pre)
    apply (wp hoare_vcg_all_lift hoare_vcg_const_imp_lift_R hoare_vcg_all_lift_R
               lsfco_cte_at
-        | simp only: simp_thms if_simps fst_conv snd_conv Invocations_A.cnode_invocation.simps K_def
+        | simp only: simp_thms if_False if_True fst_conv snd_conv cnode_invocation.simps K_def
         | wpc
         | wp (once) get_cap_cur_auth)+
   apply clarsimp
