@@ -2422,6 +2422,27 @@ lemma weak_valid_sched_action_strg:
                       obj_at_kh_kheap_simps vs_all_heap_simps is_tcb_def
                split: Structures_A.kernel_object.splits)
 
+lemma gets_the_exs_valid:
+  "bound (m s) \<Longrightarrow> \<lbrace>(=) s\<rbrace> gets_the m \<exists>\<lbrace>\<lambda>_. (=) s\<rbrace>"
+  by (clarsimp simp: bind_def assert_opt_def fail_def
+                     gets_def get_def return_def exs_valid_def gets_the_def
+              split: option.splits)
+
+lemma no_ofail_get_tcb[wp]:
+  "no_ofail (tcb_at tp) (get_tcb tp)"
+  unfolding get_tcb_def no_ofail_def
+  by (clarsimp simp: obj_at_def is_tcb split: option.splits)
+
+lemma no_ofail_read_sched_context[wp]:
+  "no_ofail (\<lambda>s. \<exists>sc n. kheap s scp = Some (Structures_A.SchedContext sc n)) (read_sched_context scp)"
+  unfolding read_sched_context_def no_ofail_def
+  by (clarsimp simp: obj_at_def is_sc_obj obind_def)
+
+lemma no_ofail_read_sc_refill_ready:
+  "no_ofail (\<lambda>s. \<exists>sc n. kheap s scp = Some (Structures_A.SchedContext sc n)) (read_sc_refill_ready scp)"
+  unfolding read_sc_refill_ready_def no_ofail_def
+  by (clarsimp simp: omonad_defs obind_def dest!: no_ofailD[OF no_ofail_read_sched_context])
+
 lemma rescheduleRequired_corres_weak:
   "corres dc (valid_tcbs and weaker_valid_sched_action and pspace_aligned and pspace_distinct)
              (valid_tcbs' and Invariants_H.valid_queues and valid_queues' and valid_release_queue_iff)
@@ -2461,12 +2482,12 @@ lemma rescheduleRequired_corres_weak:
                    split: option.splits Structures_A.kernel_object.splits)
 
   apply (rule corres_symb_exec_l[OF _ _ get_sc_refill_ready_sp, rotated])
-    apply (wpsimp wp: get_sched_context_exs_valid
-                simp: get_sc_refill_ready_def obj_at_def)
+    apply (wpsimp wp: get_sched_context_exs_valid gets_the_exs_valid
+                simp: get_sc_refill_ready_def)
+     apply (clarsimp intro!: no_ofailD[OF no_ofail_read_sc_refill_ready] simp: obj_at_def is_sc_obj)
+    apply simp
    apply (wpsimp wp: get_sched_context_no_fail simp: get_sc_refill_ready_def)
-   apply (fastforce simp: valid_tcbs_def valid_tcb_def obj_at_def is_schedulable_opt_def get_tcb_def
-                          is_sc_active_def is_sc_obj_def
-                   split: option.splits Structures_A.kernel_object.splits)
+   apply (clarsimp intro!: no_ofailD[OF no_ofail_read_sc_refill_ready] simp: obj_at_def is_sc_obj)
 
   apply (rule corres_symb_exec_l[OF _ _ assert_sp, rotated])
     apply (clarsimp simp: exs_valid_def return_def vs_all_heap_simps

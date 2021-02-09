@@ -3709,14 +3709,21 @@ lemma no_ofail_readCurTime[simp]:
   "no_ofail \<top> readCurTime"
   unfolding readCurTime_def by clarsimp
 
-lemma ovalid_readCurTime:
+lemma ovalid_readCurTime[wp]:
   "o\<lbrace>\<lambda>s. P (ksCurTime s) s\<rbrace> readCurTime \<lbrace>\<lambda>r s. P r s \<and> r = ksCurTime s\<rbrace>"
   by (simp add: readCurTime_def asks_def obind_def ovalid_def)
+
+lemma ovalid_readRefillReady[rule_format, simp]:
+  "ovalid (\<lambda>s. \<forall>ko. ko_at' ko scp s \<longrightarrow> P (rTime (refillHd ko) \<le> ksCurTime s + kernelWCETTicks) s)
+              (readRefillReady scp) P"
+  unfolding readRefillReady_def readSchedContext_def ovalid_def
+  by (fastforce simp: obind_def split: option.split_asm
+                dest: use_ovalid[OF ovalid_readCurTime])
 
 lemma refillReady_wp:
   "\<lbrace>\<lambda>s. \<forall>ko. ko_at' ko scp s \<longrightarrow> P (rTime (refillHd ko) \<le> ksCurTime s + kernelWCETTicks) s\<rbrace> refillReady scp \<lbrace>P\<rbrace>"
   unfolding refillReady_def
-  by wp
+  by wpsimp (drule use_ovalid[OF ovalid_readRefillReady])
 
 lemma scActive_wp:
   "\<lbrace>\<lambda>s. \<forall>ko. ko_at' ko scp s \<longrightarrow> P (0 < scRefillMax ko) s\<rbrace> scActive scp \<lbrace>P\<rbrace>"
@@ -3774,12 +3781,6 @@ lemma get_sched_context_no_fail:
   "no_fail (\<lambda>s. sc_at ptr s) (get_sched_context ptr)"
   by (clarsimp simp: get_sched_context_def no_fail_def bind_def get_object_def return_def get_def
                      gets_def obj_at_def is_sc_obj_def gets_the_def
-              split: Structures_A.kernel_object.splits)
-
-lemma get_sched_context_no_fail_stronger:
-  "no_fail (\<lambda>s. \<exists>sc n. kheap s ptr = Some (Structures_A.SchedContext sc n)) (get_sched_context ptr)"
-  by (clarsimp simp: get_sched_context_def no_fail_def bind_def get_object_def return_def get_def
-                     gets_def obj_at_def is_sc_obj_def
               split: Structures_A.kernel_object.splits)
 
 (* this let us cross the sc size information from concrete to abstract *)

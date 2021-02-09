@@ -3114,11 +3114,20 @@ lemma is_blocked_corres:
   apply (rename_tac st st' s s')
   apply (case_tac st; clarsimp)
   done
-
+thm  sc_released_def scReleased_def readRefillReady_def
 (* FIXME RT: move to...? *)
 lemma get_sc_released_corres:
   "corres (=) (active_sc_valid_refills and sc_at sc_ptr) (valid_objs' and sc_at' sc_ptr)
           (get_sc_released sc_ptr) (scReleased sc_ptr)"
+  apply (simp add: get_sc_released_def scReleased_def readRefillReady_def
+                   scActive_def getCurTime_def bind_assoc refillReady_def)
+  apply (rule corres_split_deprecated[OF _ get_sc_corres, THEN corres_guard_imp])
+  apply (rule corres_split[OF corres_gets_the', THEN corres_guard_imp])
+
+
+
+
+
   apply (simp add: get_sc_released_def sc_released_def scReleased_def
                    scActive_def refillReady_def getCurTime_def bind_assoc)
   apply (rule corres_split_deprecated[OF _ get_sc_corres, THEN corres_guard_imp])
