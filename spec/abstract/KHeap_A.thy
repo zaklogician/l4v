@@ -607,13 +607,25 @@ definition
 where
   "is_cur_domain_expired = (\<lambda>s. domain_time s < consumed_time s + MIN_BUDGET)"
 
+text \<open>Update current and consumed time.\<close>
+definition
+  update_time_stamp :: "(unit, 'z::state_ext) s_monad"
+where
+  "update_time_stamp = do
+    prev_time \<leftarrow> gets cur_time;
+    cur_time' \<leftarrow> do_machine_op getCurrentTime;
+    modify (\<lambda>s. s\<lparr> cur_time := cur_time' \<rparr>);
+    modify (\<lambda>s. s\<lparr> consumed_time := consumed_time s + cur_time' - prev_time \<rparr>)
+  od"
+
 definition
   preemption_point :: "(unit,'z::state_ext) p_monad" where
  "preemption_point \<equiv> doE liftE $ do_extended_op update_work_units;
                          OR_choiceE (work_units_limit_reached)
                            (doE liftE $ do_extended_op reset_work_units;
                                 irq_opt \<leftarrow> liftE $ do_machine_op (getActiveIRQ True);
-                                case_option (do cur_sc \<leftarrow> gets cur_sc;
+                                case_option (do update_time_stamp;
+                                                cur_sc \<leftarrow> gets cur_sc;
                                                 active \<leftarrow> get_sc_active cur_sc;
                                                 consumed \<leftarrow> gets consumed_time;
                                                 sufficient \<leftarrow> get_sc_refill_sufficient cur_sc consumed;

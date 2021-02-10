@@ -456,17 +456,6 @@ where
 
 section "Global time"
 
-text \<open>Update current and consumed time.\<close>
-definition
-  update_time_stamp :: "(unit, 'z::state_ext) s_monad"
-where
-  "update_time_stamp = do
-    prev_time \<leftarrow> gets cur_time;
-    cur_time' \<leftarrow> do_machine_op getCurrentTime;
-    modify (\<lambda>s. s\<lparr> cur_time := cur_time' \<rparr>);
-    modify (\<lambda>s. s\<lparr> consumed_time := consumed_time s + cur_time' - prev_time \<rparr>)
-  od"
-
 text \<open>Currently, @{text update_restart_pc} can be defined generically up to
 the actual register numbers.\<close>
 definition
