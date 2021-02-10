@@ -1659,6 +1659,11 @@ lemma schedule_valid_pdpt[wp]: "\<lbrace>valid_pdpt_objs\<rbrace> schedule :: (u
   apply (wpsimp wp: alternative_wp select_wp hoare_drop_imps)
   done
 
+crunches update_time_stamp
+  for ct_running[wp]: ct_running
+  and pred_tcb_at[wp]: "pred_tcb_at proj P t"
+  and pred_tcb_at_ct[wp]: "\<lambda>s. pred_tcb_at proj P (cur_thread s) s"
+
 lemma call_kernel_valid_pdpt[wp]:
   "\<lbrace>invs and (\<lambda>s. e \<noteq> Interrupt \<longrightarrow> ct_running s) and valid_pdpt_objs
      and (\<lambda>s. scheduler_action s = resume_cur_thread)

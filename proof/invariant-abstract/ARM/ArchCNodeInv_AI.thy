@@ -221,7 +221,7 @@ lemma vs_cap_ref_update_cap_data[simp, CNodeInv_AI_assms]:
   by (simp add: vs_cap_ref_def update_cap_data_closedform
                 arch_update_cap_data_def
          split: cap.split)
-
+(*
 lemma in_preempt[simp, intro, CNodeInv_AI_assms]:
   "(Inr rv, s') \<in> fst (preemption_point s)
    \<Longrightarrow> \<exists>f es. s' = s\<lparr>machine_state := machine_state s \<lparr>irq_state := f (irq_state (machine_state s))\<rparr>,
@@ -241,11 +241,9 @@ lemma in_preempt[simp, intro, CNodeInv_AI_assms]:
             apply (rule_tac x=Suc in exI, rule_tac x="exst bb" in exI, fastforce)+
      apply (rule_tac x=id in exI, rule_tac x="exst b" in exI, fastforce)+
   done
+*)
 
-lemma invs_irq_state_independent[intro!, simp, CNodeInv_AI_assms]:
-  "invs (s\<lparr>machine_state := machine_state s\<lparr>irq_state := f (irq_state (machine_state s))\<rparr>\<rparr>)
-   = invs s"
-  by auto
+lemmas [CNodeInv_AI_assms] = invs_irq_state_independent
 
 lemma cte_at_nat_to_cref_zbits [CNodeInv_AI_assms]:
   "\<lbrakk> s \<turnstile> Zombie oref zb n; m < n \<rbrakk>

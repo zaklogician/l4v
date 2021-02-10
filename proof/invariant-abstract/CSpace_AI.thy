@@ -17,6 +17,10 @@ context begin interpretation Arch .
 requalify_consts
   irq_state_update
   irq_state
+  time_state_update
+  time_state
+  last_machine_time_update
+  last_machine_time
   final_matters_arch
   ups_of_heap
 
@@ -70,7 +74,7 @@ lemma capBadge_ordering_trans:
 definition "irq_state_independent_A (P :: 'z state \<Rightarrow> bool) \<equiv>
   \<forall>(f :: nat \<Rightarrow> nat) (s :: 'z state). P s \<longrightarrow> P (s\<lparr>machine_state := machine_state s
                   \<lparr>irq_state := f (irq_state (machine_state s))\<rparr>\<rparr>)"
-
+                                        
 lemma irq_state_independent_AI[intro!, simp]:
   "\<lbrakk>\<And>s f. P (s\<lparr>machine_state := machine_state s
               \<lparr>irq_state := f (irq_state (machine_state s))\<rparr>\<rparr>) = P s\<rbrakk>
@@ -106,13 +110,74 @@ lemma gets_machine_state_modify:
    gets machine_state >>= f"
   by (simp add: bind_def split_def simpler_gets_def simpler_modify_def)
 
+definition time_state_independent_A :: "('z state \<Rightarrow> bool) \<Rightarrow> bool" where
+  "time_state_independent_A P \<equiv>
+     \<forall>f s. P s \<longrightarrow>
+           P (s\<lparr>machine_state := machine_state s\<lparr>time_state := f (time_state (machine_state s))\<rparr>\<rparr>)"
 
-locale CSpace_AI_getActiveIRQ_wp =
-  fixes state_ext_t :: "'state_ext::state_ext itself"
-  assumes getActiveIRQ_wp[wp]:
-    "\<And>P :: 'state_ext state \<Rightarrow> bool.
-      irq_state_independent_A P \<Longrightarrow> valid P (do_machine_op (getActiveIRQ in_kernel)) (\<lambda>_. P)"
+lemma time_state_independent_AI[intro!, simp]:
+  "\<lbrakk>\<And>s f. P (s\<lparr>machine_state := machine_state s
+              \<lparr>time_state := f (time_state (machine_state s))\<rparr>\<rparr>) = P s\<rbrakk>
+   \<Longrightarrow> time_state_independent_A P"
+  by (simp add: time_state_independent_A_def)
 
+lemma time_state_independent_A_conjI[intro!]:
+  "\<lbrakk>time_state_independent_A P; time_state_independent_A Q\<rbrakk>
+   \<Longrightarrow> time_state_independent_A (P and Q)"
+  "\<lbrakk>time_state_independent_A P; time_state_independent_A Q\<rbrakk>
+   \<Longrightarrow> time_state_independent_A (\<lambda>s. P s \<and> Q s)"
+  by (auto simp: time_state_independent_A_def)
+
+definition getCurrentTime_independent_A :: "('z state \<Rightarrow> bool) \<Rightarrow> bool" where
+  "getCurrentTime_independent_A P \<equiv>
+     \<forall>f s. P s \<longrightarrow>
+           P (s\<lparr>machine_state :=
+                      machine_state s\<lparr>last_machine_time :=
+                             f (last_machine_time (machine_state s)) (time_state (machine_state s))\<rparr>\<rparr>)"
+
+lemma getCurrentTime_independent_AI[intro!, simp]:
+  "\<lbrakk>\<And>s f. P (s\<lparr>machine_state := machine_state s
+              \<lparr>last_machine_time := f (last_machine_time (machine_state s)) (time_state (machine_state s))\<rparr>\<rparr>) = P s\<rbrakk>
+   \<Longrightarrow> getCurrentTime_independent_A P"
+  by (simp add: getCurrentTime_independent_A_def)
+
+lemma getCurrentTime_independent_A_conjI[intro!]:
+  "\<lbrakk>getCurrentTime_independent_A P; getCurrentTime_independent_A Q\<rbrakk>
+   \<Longrightarrow> getCurrentTime_independent_A (P and Q)"
+  "\<lbrakk>getCurrentTime_independent_A P; getCurrentTime_independent_A Q\<rbrakk>
+   \<Longrightarrow> getCurrentTime_independent_A (\<lambda>s. P s \<and> Q s)"
+  by (auto simp: getCurrentTime_independent_A_def)
+
+definition cur_time_independent_A :: "('z state \<Rightarrow> bool) \<Rightarrow> bool" where
+  "cur_time_independent_A P \<equiv> \<forall>f s. P s \<longrightarrow> P (s\<lparr>cur_time := f (cur_time s)\<rparr>)"
+
+lemma cur_time_independent_AI[intro!, simp]:
+  "\<lbrakk>\<And>s f. P (s\<lparr>cur_time := f (cur_time s)\<rparr>) = P s\<rbrakk>
+   \<Longrightarrow> cur_time_independent_A P"
+  by (simp add: cur_time_independent_A_def)
+
+lemma cur_time_independent_A_conjI[intro!]:
+  "\<lbrakk>cur_time_independent_A P; cur_time_independent_A Q\<rbrakk>
+   \<Longrightarrow> cur_time_independent_A (P and Q)"
+  "\<lbrakk>cur_time_independent_A P; cur_time_independent_A Q\<rbrakk>
+   \<Longrightarrow> cur_time_independent_A (\<lambda>s. P s \<and> Q s)"
+  by (auto simp: cur_time_independent_A_def)
+
+definition update_time_stamp_independent_A :: "('z state \<Rightarrow> bool) \<Rightarrow> bool" where
+  "update_time_stamp_independent_A P \<equiv>
+      \<forall>f s. P s \<longrightarrow> P (s\<lparr>consumed_time := f (consumed_time s) (cur_time s)\<rparr>)"
+
+lemma update_time_stamp_independent_AI[intro!, simp]:
+  "\<lbrakk>\<And>s f. P (s\<lparr>consumed_time := f (consumed_time s) (cur_time s)\<rparr>) = P s\<rbrakk>
+   \<Longrightarrow> update_time_stamp_independent_A P"
+  by (simp add: update_time_stamp_independent_A_def)
+
+lemma update_time_stamp_independent_A_conjI[intro!]:
+  "\<lbrakk>update_time_stamp_independent_A P; update_time_stamp_independent_A Q\<rbrakk>
+   \<Longrightarrow> update_time_stamp_independent_A (P and Q)"
+  "\<lbrakk>update_time_stamp_independent_A P; update_time_stamp_independent_A Q\<rbrakk>
+   \<Longrightarrow> update_time_stamp_independent_A (\<lambda>s. P s \<and> Q s)"
+  by (auto simp: update_time_stamp_independent_A_def)
 
 lemma OR_choiceE_weak_wp:
   "\<lbrace>P\<rbrace> f \<sqinter> g \<lbrace>Q\<rbrace> \<Longrightarrow> \<lbrace>P\<rbrace> OR_choiceE b f g \<lbrace>Q\<rbrace>"
@@ -120,12 +185,29 @@ lemma OR_choiceE_weak_wp:
                     select_f_def gets_def return_def get_def liftE_def lift_def bindE_def
           split: option.splits if_split_asm)
   done
+thm ARM.getCurrentTime_def update_time_stamp_def
+locale CSpace_AI_preemption_point_wp =
+  fixes state_ext_t :: "'state_ext::state_ext itself"
+  assumes getActiveIRQ_wp[wp]:
+    "\<And>P :: 'state_ext state \<Rightarrow> bool.
+      irq_state_independent_A P \<Longrightarrow> valid P (do_machine_op (getActiveIRQ in_kernel)) (\<lambda>_. P)"
+  assumes getCurrentTime_wp[wp]:
+    "\<And>P :: 'state_ext state \<Rightarrow> bool.
+      time_state_independent_A P \<Longrightarrow> getCurrentTime_independent_A P \<Longrightarrow>
+      valid P (do_machine_op getCurrentTime) (\<lambda>_. P)"
+  assumes update_time_stamp_wp:
+    "\<And>P :: 'state_ext state \<Rightarrow> bool.
+      update_time_stamp_independent_A P \<Longrightarrow> cur_time_independent_A P \<Longrightarrow>
+      time_state_independent_A P \<Longrightarrow> getCurrentTime_independent_A P \<Longrightarrow>
+      valid P update_time_stamp (\<lambda>_. P)"  
 
-context CSpace_AI_getActiveIRQ_wp begin
+context CSpace_AI_preemption_point_wp begin
 
 lemma preemption_point_inv:
   fixes P :: "'state_ext state \<Rightarrow> bool"
-  shows "\<lbrakk>irq_state_independent_A P; \<And>f s. P (trans_state f s) = P s\<rbrakk>
+  shows "\<lbrakk>irq_state_independent_A P; time_state_independent_A P; getCurrentTime_independent_A P;
+          update_time_stamp_independent_A P; cur_time_independent_A P;
+         \<And>f s. P (trans_state f s) = P s\<rbrakk>
          \<Longrightarrow> \<lbrace>P\<rbrace> preemption_point \<lbrace>\<lambda>_. P\<rbrace>"
   apply (clarsimp simp: preemption_point_def)
   apply (rule validE_valid)
@@ -139,11 +221,12 @@ lemma preemption_point_inv:
   apply (case_tac irq_opt; clarsimp?, (solves wpsimp)?)
   apply (rule valid_validE)
   apply (rule hoare_seq_ext_skip
-         , solves \<open>wpsimp simp: get_sc_refill_sufficient_def get_sc_active_def\<close>)+
+         , solves \<open>wpsimp wp: update_time_stamp_wp simp: get_sc_refill_sufficient_def get_sc_active_def\<close>)+
   apply wpsimp
   done
 
 end
+
 
 lemmas valid_cap_machine_state [iff]
   = machine_state_update.valid_cap_update
@@ -3748,7 +3831,7 @@ lemma cap_swap_valid_objs:
 
 
 locale CSpace_AI
-  = CSpace_AI_getActiveIRQ_wp state_ext_t
+  = CSpace_AI_preemption_point_wp state_ext_t
   + CSpace_AI_weak_derived state_ext_t
   + CSpace_AI_set_free_index_invs state_ext_t
   + CSpace_AI_set_untyped_cap_as_full state_ext_t
@@ -4048,7 +4131,7 @@ lemma safe_parent_is_parent:
   apply (drule (2) safe_parent_arch_is_parent[where f=f])
   apply (clarsimp simp: is_cap_simps should_be_parent_of_def)
   done
-
+           
 context CSpace_AI begin
 
 lemma safe_parent_ut_descendants:

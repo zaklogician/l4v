@@ -86,10 +86,9 @@ sublocale init_arch_objects: valid_sched_pred_locale _ "init_arch_objects t p n 
 
 crunches invoke_untyped
   for valid_sched_pred_misc[wp]:
-      "\<lambda>s::'state_ext state. P (cur_time s) (cur_domain s) (cur_thread s) (idle_thread s)
+      "\<lambda>s::'state_ext state. P (cur_domain s) (cur_thread s) (idle_thread s)
                                (ready_queues s) (release_queue s) (scheduler_action s)
-                               (consumed_time s) (cur_sc s) (last_machine_time_of s)
-                               (time_state_of s)"
+                               (cur_sc s)"
   (wp: crunch_wps mapME_x_inv_wp preemption_point_inv
    simp: detype_def whenE_def unless_def wrap_ext_det_ext_ext_def mapM_x_defsym
    ignore: do_machine_op)
@@ -298,32 +297,6 @@ lemmas reset_untyped_cap_sched_context_at =
   reset_untyped_cap_obj_at[where P'="\<lambda>obj. \<exists>sc n. obj = SchedContext sc n \<and> P' sc" for P'
                            , simplified cnode_agnostic_pred_def tcb_cnode_agnostic_pred_def, simplified]
 
-lemma preemption_point_cur_time[wp]:
-  "preemption_point \<lbrace>\<lambda>s. P (cur_time s)\<rbrace>"
-  by (wpsimp simp: preemption_point_def do_extended_op_def
-               wp: OR_choiceE_weak_wp hoare_drop_imps)
-
-lemma reset_untyped_cap_cur_time[wp]:
-  "reset_untyped_cap slot \<lbrace>\<lambda>s. P (cur_time s)\<rbrace>"
-  by (wpsimp simp: reset_untyped_cap_def delete_objects_def
-               wp: mapME_x_inv_wp hoare_drop_imps)
-
-lemma reset_untyped_cap_bound_sc_obj_tcb_at:
-  "\<lbrace>\<lambda>s. N (bound_sc_obj_tcb_at (P (cur_time s)) t s)
-        \<and> cte_wp_at is_untyped_cap slot s
-        \<and> (\<forall>cap. caps_of_state s slot = Some cap
-                  \<longrightarrow> t \<notin> cap_range cap
-                       \<and> bound_sc_tcb_at (case_option True (\<lambda>scp. scp \<notin> cap_range cap)) t s)\<rbrace>
-   reset_untyped_cap slot
-   \<lbrace>\<lambda>rv s. N (bound_sc_obj_tcb_at (P (cur_time s)) t s)\<rbrace>"
-  apply (rule bound_sc_obj_tcb_at_lift_strong'[where g=cur_time], wpsimp)
-  apply (rule hoare_vcg_ex_lift_N_pre_conj)
-  apply (rule validI; elim conjE rsubst[of N])
-  by (intro conj_cong2
-      ; erule use_valid_inv[OF _ reset_untyped_cap_pred_tcb_at]
-              use_valid_inv[OF _ reset_untyped_cap_sc_at_pred_n]
-      ; clarsimp simp: cte_wp_at_caps_of_state pred_tcb_at_def obj_at_def)
-
 (* FIXME: Move to Invariants_AI *)
 lemma sym_ref_tcb_sc: "\<lbrakk> sym_refs (state_refs_of s); kheap s tp = Some (TCB tcb);
    tcb_sched_context tcb = Some scp \<rbrakk> \<Longrightarrow>
@@ -391,7 +364,7 @@ lemma bound_sc_obj_tcb_at_nonz_cap_lift:
   apply (frule use_valid, rule_tac P="\<lambda>scpo. scpo = Some p" in bound_sc; clarsimp simp: pred_tcb_at_def obj_at_def)
   apply (frule use_valid, rule_tac scp=p in sc_refill_cfg; clarsimp simp: sc_at_ppred_def obj_at_def)
   done
-
+(*
 lemma (in DetSchedAux_AI) invoke_untyped_bound_sc_obj_tcb_at[wp]:
   "\<lbrace>\<lambda>s::'state_ext state. bound_sc_obj_tcb_at (P (cur_time s)) t s
         \<and> ex_nonz_cap_to t s
@@ -404,7 +377,7 @@ lemma (in DetSchedAux_AI) invoke_untyped_bound_sc_obj_tcb_at[wp]:
   apply wp_pre
    apply (rule hoare_lift_Pf3[where f=cur_time, rotated], wpsimp)
   by (rule bound_sc_obj_tcb_at_nonz_cap_lift; wpsimp wp: invoke_untyped_sc_at_pred_n)
-
+*)
 lemma set_cap_obj_at_impossible_cur_time:
   "\<lbrace>\<lambda>s. P (obj_at (P' (cur_time s)) p s) \<and> (\<forall>ko. P' (cur_time s) ko \<longrightarrow> caps_of ko = {})\<rbrace>
      set_cap cap ptr
@@ -613,7 +586,8 @@ lemma valid_sched_tcb_state_preservation_gen:
   assumes sc_refill_cfg2:
     "\<And>P. \<lbrace>\<lambda>s. (\<forall>p. pred_map active_scrc (sc_refill_cfgs_of s) p \<longrightarrow> pred_map P (sc_refill_cfgs_of s) p) \<and> I s\<rbrace>
             f \<lbrace>\<lambda>rv s. \<forall>p. pred_map active_scrc (sc_refill_cfgs_of s) p \<longrightarrow> pred_map P (sc_refill_cfgs_of s) p\<rbrace>"
-  assumes cur_time: "\<And>P. \<lbrace>\<lambda>s. P (cur_time s)\<rbrace> f \<lbrace>\<lambda>r s. P (cur_time s)\<rbrace>"
+(*  assumes cur_time: "\<And>P. \<lbrace>\<lambda>s. P (cur_time s)\<rbrace> f \<lbrace>\<lambda>r s. P (cur_time s)\<rbrace>"*)
+  assumes cur_time: "\<And>P. \<lbrace>\<lambda>s. P (released_sc (cur_time s))\<rbrace> f \<lbrace>\<lambda>r s. P (released_sc (cur_time s))\<rbrace>"
   assumes cur_thread: "\<And>P. \<lbrace>\<lambda>s. P (cur_thread s)\<rbrace> f \<lbrace>\<lambda>r s. P (cur_thread s)\<rbrace>"
   assumes idle_thread: "\<And>P. \<lbrace>\<lambda>s. P (idle_thread s)\<rbrace> f \<lbrace>\<lambda>r s. P (idle_thread s)\<rbrace>"
   assumes valid_blocked: "\<lbrace>valid_blocked\<rbrace> f \<lbrace>\<lambda>_. valid_blocked\<rbrace>"
@@ -629,7 +603,8 @@ lemma valid_sched_tcb_state_preservation_gen:
                                               \<and> dom = cur_domain s \<and> release = release_queue s"
            in valid_others
          , simp)
-  apply (frule use_valid, rule_tac P="\<lambda>ct. ct = cur_time s" in cur_time, simp)
+(*  apply (frule use_valid, rule_tac P="\<lambda>ct. ct = cur_time s" in cur_time, simp)*)
+  apply (frule use_valid, rule_tac P="\<lambda>ct. ct = released_sc (cur_time s)" in cur_time, simp)
   apply (frule use_valid, rule_tac P="\<lambda>ct. ct = cur_thread s" in cur_thread, simp)
   apply (frule use_valid, rule_tac P="\<lambda>it. it = idle_thread s" in idle_thread, simp)
   apply (frule use_valid[OF _ valid_blocked], assumption)
@@ -826,7 +801,8 @@ lemma retype_region_obj_at_live:
 (* FIXME: move *)
 lemma preemption_point_obj_at:
   "preemption_point \<lbrace>\<lambda>s. N (obj_at P p s)\<rbrace>"
-  apply (wpsimp simp: preemption_point_def wp: OR_choiceE_weak_wp dxo_wp_weak hoare_drop_imps)
+  apply (wpsimp simp: preemption_point_def wp: OR_choiceE_weak_wp dxo_wp_weak hoare_drop_imps
+                  wp: update_time_stamp_wp)
   done
 
 (* FIXME: move *)

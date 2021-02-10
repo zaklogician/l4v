@@ -129,11 +129,11 @@ locale CNodeInv_AI =
     "\<And>P d cap. vs_cap_ref (update_cap_data P d cap) = vs_cap_ref cap"
   assumes weak_derived_cap_is_device:
     "\<And>c c'. \<lbrakk>weak_derived c' c\<rbrakk> \<Longrightarrow>  cap_is_device c = cap_is_device c'"
-  assumes in_preempt[simp,intro]:
+(*  assumes in_preempt[simp,intro]:
     "\<And>rv s' (s::'state_ext state).
       (Inr rv, s') \<in> fst (preemption_point s) \<Longrightarrow>
       (\<exists>f es. s' = s \<lparr> machine_state := machine_state s
-                     \<lparr> irq_state := f (irq_state (machine_state s)) \<rparr>, exst := es\<rparr>)"
+                     \<lparr> irq_state := f (irq_state (machine_state s)) \<rparr>, exst := es\<rparr>)"*)
   assumes invs_irq_state_independent[intro!, simp]:
     "\<And>(s::'state_ext state) f.
       invs (s\<lparr>machine_state := machine_state s\<lparr>irq_state := f (irq_state (machine_state s))\<rparr>\<rparr>)
@@ -196,6 +196,8 @@ locale CNodeInv_AI =
   "\<And>x p t. \<lbrace>\<lambda>(s::'state_ext state). caps_of_state s x = Some (cap.ThreadCap p)\<rbrace>
      prepare_thread_delete t
    \<lbrace>\<lambda>rv s. caps_of_state s x = Some (cap.ThreadCap p)\<rbrace>"
+
+lemmas in_preempt = preemption_point_success
 
 locale CNodeInv_AI_2 = CNodeInv_AI state_ext_t
   for state_ext_t :: "'state_ext::state_ext itself" +
@@ -862,10 +864,19 @@ lemma suspend_thread_cap:
    apply (simp add: cte_wp_at_caps_of_state)+
   done
 
-lemma not_recursive_cspaces_irq_state_independent[intro!, simp]:
-  "not_recursive_cspaces (s \<lparr> machine_state := machine_state s \<lparr> irq_state := f (irq_state (machine_state s)) \<rparr> \<rparr>)
+lemma not_recursive_cspaces_preemption_point_independent[intro!, simp]:
+  "not_recursive_cspaces
+     (s\<lparr>machine_state := machine_state s
+                          \<lparr>irq_state := f (irq_state (machine_state s)),
+                           time_state := g (time_state (machine_state s)),
+                           last_machine_time := lasttime\<rparr>\<rparr>)
    = not_recursive_cspaces s"
   by (simp add: not_recursive_cspaces_def)
+ 
+lemma not_recursive_cspaces_time_independent_simple[simp]:
+  "not_recursive_cspaces (s \<lparr> cur_time := t \<rparr>) = not_recursive_cspaces s"
+  "not_recursive_cspaces (s \<lparr> consumed_time := t' \<rparr>) = not_recursive_cspaces s"
+  by (simp add: not_recursive_cspaces_def)+
 
 context CNodeInv_AI begin
 
@@ -2592,7 +2603,6 @@ lemma cap_revoke_invs:
   "\<And>ptr. \<lbrace>\<lambda>s::'state_ext state. invs s\<rbrace> cap_revoke ptr \<lbrace>\<lambda>rv. invs\<rbrace>"
   by (wpsimp wp: cap_revoke_preservation_desc_of[where Q="\<lambda>_ _ _. True", simplified]
                  preemption_point_inv)
-
 end
 
 
