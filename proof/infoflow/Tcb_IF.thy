@@ -354,7 +354,6 @@ shows "
                    hoare_vcg_E_elim hoare_vcg_const_imp_lift_R
                    hoare_vcg_R_conj
         | (wp
-             check_cap_inv2[where Q="\<lambda>_. pas_refined aag"]
              check_cap_inv2[where Q="\<lambda>_ s. t \<noteq> idle_thread s"]
              out_invs_trivial case_option_wpE cap_delete_deletes
              cap_delete_valid_cap cap_insert_valid_cap out_cte_at
@@ -507,10 +506,6 @@ lemma restart_reads_respects_f:
          rule conjI | assumption | clarsimp simp: reads_equiv_f_def)+
   done
 
-crunch cur_thread: cancel_ipc "\<lambda> s. P (cur_thread s)"
-  (wp: crunch_wps select_wp simp: crunch_simps)
-
-
 lemma det_zipWithM:
   assumes "\<And> x y. \<lbrakk>x \<in> set xs; y \<in> set ys\<rbrakk> \<Longrightarrow> det (f x y)"
   shows "det (zipWithM f xs ys)"
@@ -649,7 +644,6 @@ lemma bind_notification_reads_respects:
 lemmas thread_get_reads_respects_f = reads_respects_f[OF thread_get_reads_respects, where Q="\<top>", simplified, OF thread_get_inv]
 
 lemmas reschedule_required_reads_respects_f = reads_respects_f[OF reschedule_required_reads_respects, where Q="\<top>", simplified, OF _ reschedule_required_ext_extended.silc_inv]
-crunch pas_refined[wp]: restart "pas_refined aag"
 
 lemma invoke_tcb_reads_respects_f:
   assumes domains_distinct[wp]: "pas_domains_distinct aag"
