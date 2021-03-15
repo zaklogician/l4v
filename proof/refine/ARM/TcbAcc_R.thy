@@ -1458,7 +1458,7 @@ lemma threadSet_ct_idle_or_in_cur_domain':
 
 lemma threadSet_valid_dom_schedule':
   "\<lbrace> valid_dom_schedule'\<rbrace> threadSet F t \<lbrace>\<lambda>_. valid_dom_schedule'\<rbrace>"
-  unfolding threadSet_def
+  unfolding threadSet_def valid_dom_schedule'_def
   by (wp setObject_ksDomSchedule_inv hoare_Ball_helper)
 
 lemma threadSet_invs_trivialT:
@@ -5228,7 +5228,7 @@ lemma sts_invs_minor':
       and invs'\<rbrace>
    setThreadState st t
    \<lbrace>\<lambda>rv. invs'\<rbrace>"
-  apply (simp add: invs'_def valid_state'_def)
+  apply (simp add: invs'_def valid_state'_def valid_dom_schedule'_def)
   apply (wpsimp wp: sts_sch_act' valid_irq_node_lift irqs_masked_lift setThreadState_ct_not_inQ
               simp: cteCaps_of_def o_def)
   apply (intro conjI impI)
@@ -5246,7 +5246,7 @@ lemma sts_invs':
       and invs'\<rbrace>
    setThreadState st t
    \<lbrace>\<lambda>rv. invs'\<rbrace>"
-  apply (simp add: invs'_def valid_state'_def)
+  apply (simp add: invs'_def valid_state'_def valid_dom_schedule'_def)
   apply (wpsimp wp: sts_sch_act' valid_irq_node_lift irqs_masked_lift setThreadState_ct_not_inQ
               simp: cteCaps_of_def o_def)
   done
