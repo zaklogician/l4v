@@ -2315,7 +2315,7 @@ lemma replyUnlink_invs'[wp]:
   "\<lbrace>invs' and sch_act_not tcbPtr and (\<lambda>s. tcbPtr \<noteq> ksIdleThread s)\<rbrace>
    replyUnlink replyPtr tcbPtr
    \<lbrace>\<lambda>_. invs'\<rbrace>"
-  unfolding invs'_def valid_state'_def
+  unfolding invs'_def valid_state'_def valid_dom_schedule'_def
   by wpsimp
 
 lemma replyClear_invs'[wp]:
