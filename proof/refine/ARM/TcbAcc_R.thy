@@ -5752,7 +5752,7 @@ lemma tcbReleaseDequeue_invs'[wp]:
     and distinct_release_queue\<rbrace>
    tcbReleaseDequeue
    \<lbrace>\<lambda>_. invs'\<rbrace>"
-  by (wpsimp simp: invs'_def valid_state'_def
+  by (wpsimp simp: invs'_def valid_state'_def valid_dom_schedule'_def
                wp: valid_irq_node_lift irqs_masked_lift untyped_ranges_zero_lift
                    cteCaps_of_ctes_of_lift)
 
@@ -5934,7 +5934,7 @@ lemma tcbReleaseRemove_ct_not_inQ[wp]:
 
 lemma tcbReleaseRemove_invs':
   "tcbReleaseRemove tcbPtr \<lbrace>invs'\<rbrace>"
-  apply (simp add: invs'_def valid_state'_def valid_pspace'_def)
+  apply (simp add: invs'_def valid_state'_def valid_pspace'_def valid_dom_schedule'_def)
   apply (wpsimp wp: valid_irq_node_lift valid_irq_handlers_lift'' irqs_masked_lift cur_tcb_lift
                     untyped_ranges_zero_lift tcbReleaseRemove_valid_queues
               simp: cteCaps_of_def o_def)
